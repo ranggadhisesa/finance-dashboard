@@ -2,12 +2,19 @@
 
 Modern authentication system with elegant blue & white design.
 
-## 🚀 Quick Start (Development)
+## 🚀 Tech Stack
+
+- **Frontend**: React + Vite + Vanilla CSS
+- **Backend**: Express.js + Node.js
+- **Database**: MySQL
+- **Auth**: JWT
+
+## 🏃 Quick Start (Development)
 
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL 15+
+- MySQL 5.7+ or 8.0
 
 ### Backend Setup
 
@@ -17,7 +24,7 @@ npm install
 
 # Setup environment
 cp .env.example .env
-# Edit .env with your database credentials
+# Edit .env with your MySQL credentials
 
 # Create tables and seed dummy users
 npm run seed
@@ -36,21 +43,6 @@ npm run dev
 
 Open http://localhost:5173
 
-## 🐳 Docker Deployment
-
-```bash
-# Copy and edit environment
-cp .env.example .env
-
-# Build and run
-docker compose up -d
-
-# Seed database
-docker compose exec backend npm run seed
-```
-
-Open http://localhost
-
 ## 👤 Demo Accounts
 
 | Email | Password | Role |
@@ -58,14 +50,22 @@ Open http://localhost
 | admin@example.com | admin123 | admin |
 | user@example.com | user123 | user |
 
-## 📚 Documentation
+## 📚 Deployment
 
-- [Deployment Guide](DEPLOYMENT.md) - Complete VPS deployment instructions
+- [aaPanel Deployment Guide](AAPANEL_DEPLOY.md) - Deploy ke VPS dengan aaPanel + MySQL
 
-## 🛠️ Tech Stack
+## 📁 Project Structure
 
-- **Frontend**: React + Vite + Vanilla CSS
-- **Backend**: Express.js + Node.js
-- **Database**: PostgreSQL
-- **Auth**: JWT
-- **Deploy**: Docker + Nginx
+```
+├── backend/          # Express.js API
+│   ├── config/       # Database configuration
+│   ├── middleware/   # JWT auth middleware
+│   ├── routes/       # API routes
+│   └── scripts/      # Database seed script
+│
+└── frontend/         # React application
+    ├── src/
+    │   ├── context/  # Auth state management
+    │   └── pages/    # Login & Dashboard pages
+    └── public/
+```

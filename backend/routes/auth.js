@@ -22,12 +22,12 @@ router.post('/register', async (req, res) => {
         }
 
         // Check if user already exists
-        const existingUser = await pool.query(
-            'SELECT id FROM users WHERE email = $1',
+        const [existingUsers] = await pool.query(
+            'SELECT id FROM users WHERE email = ?',
             [email.toLowerCase()]
         );
 
-        if (existingUser.rows.length > 0) {
+        if (existingUsers.length > 0) {
             return res.status(409).json({
                 success: false,
                 message: 'Email already registered'
@@ -39,20 +39,18 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Insert user
-        const result = await pool.query(
-            `INSERT INTO users (name, email, password, role) 
-       VALUES ($1, $2, $3, $4) 
-       RETURNING id, name, email, role, created_at`,
+        const [result] = await pool.query(
+            `INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`,
             [name, email.toLowerCase(), hashedPassword, 'user']
         );
 
-        const user = result.rows[0];
+        const userId = result.insertId;
 
         // Generate token
         const token = generateToken({
-            id: user.id,
-            email: user.email,
-            role: user.role
+            id: userId,
+            email: email.toLowerCase(),
+            role: 'user'
         });
 
         res.status(201).json({
@@ -60,10 +58,10 @@ router.post('/register', async (req, res) => {
             message: 'User registered successfully',
             data: {
                 user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role
+                    id: userId,
+                    name: name,
+                    email: email.toLowerCase(),
+                    role: 'user'
                 },
                 token
             }
@@ -95,19 +93,19 @@ router.post('/login', async (req, res) => {
         }
 
         // Find user
-        const result = await pool.query(
-            'SELECT * FROM users WHERE email = $1',
+        const [users] = await pool.query(
+            'SELECT * FROM users WHERE email = ?',
             [email.toLowerCase()]
         );
 
-        if (result.rows.length === 0) {
+        if (users.length === 0) {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
             });
         }
 
-        const user = result.rows[0];
+        const user = users[0];
 
         // Verify password
         const isValidPassword = await bcrypt.compare(password, user.password);
@@ -128,7 +126,7 @@ router.post('/login', async (req, res) => {
 
         // Update last login
         await pool.query(
-            'UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+            'UPDATE users SET updated_at = NOW() WHERE id = ?',
             [user.id]
         );
 
@@ -161,12 +159,12 @@ router.post('/login', async (req, res) => {
  */
 router.get('/me', authenticateToken, async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT id, name, email, role, created_at FROM users WHERE id = $1',
+        const [users] = await pool.query(
+            'SELECT id, name, email, role, created_at FROM users WHERE id = ?',
             [req.user.id]
         );
 
-        if (result.rows.length === 0) {
+        if (users.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'User not found'
@@ -176,7 +174,7 @@ router.get('/me', authenticateToken, async (req, res) => {
         res.json({
             success: true,
             data: {
-                user: result.rows[0]
+                user: users[0]
             }
         });
 
@@ -194,8 +192,6 @@ router.get('/me', authenticateToken, async (req, res) => {
  * Logout user (client-side token removal)
  */
 router.post('/logout', authenticateToken, (req, res) => {
-    // In a stateless JWT setup, logout is handled client-side
-    // This endpoint can be used for logging or token blacklisting if needed
     res.json({
         success: true,
         message: 'Logged out successfully'
